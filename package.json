@@ -1,0 +1,13 @@
+{
+  "name": "docker_shoppingcar",
+  "version": "1.0.0",
+  "description": "Shopping Car application that runs into docker container",
+  "author": "Guillermo Hernandez <guillermoart132@gmail.com>",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.16.1"
+  }
+}

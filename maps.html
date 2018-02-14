@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+  <meta name="viewport" content="width=device-width" />
+  <meta charset="UTF-8">
+   
+   <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map_canvas { height: 100% }
+    </style>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/bootstrap-colorselector.min.css">
+    <link rel="stylesheet" type="text/css" href="css/navbar_style.css">
+
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAnDRgCQpJZ-QXmfhwH9qApF-bZ7zi_kI0&callback=initMap"
+async defer></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="js/bootstrap-colorselector.min.js"></script>
+<script src="js/colorSelector.js"></script>
+<script src="js/changePin.js"></script>
+<script src="js/navbar_behaviour.js"></script>
+
+<script type="text/javascript">
+
+        var mapOptions = null;
+        var map = null;
+       
+        var infowindow;
+        ( 
+            function () 
+            {
+                google.maps.Map.prototype.markers = new Array();
+                google.maps.Map.prototype.getMarkers = function ()
+                {
+                return this.markers
+                };
+            
+                google.maps.Map.prototype.clearMarkers = function () 
+                {
+                    for (var i = 0; i < this.markers.length; i++) {
+                        this.markers[i].setMap(null);
+                    }
+                this.markers = new Array();
+                };
+            
+                google.maps.Marker.prototype._setMap = google.maps.Marker.prototype.setMap;
+                google.maps.Marker.prototype.setMap = function (map) 
+                {
+                    if (map) {
+                        map.markers[map.markers.length] = this;
+                    }
+                    this._setMap(map);
+                }
+            }
+        )
+        ();
+            
+        
+        
+        function initMap() {
+            
+            lat= 19.01826447750003;
+            lng = -98.24133396148682;
+
+            sessionStorage.colorPin = "FF00FF";
+            sessionStorage.characterPin = 'S';
+            sessionStorage.messagePin = 'Shoppin Car Company';
+            
+          
+            mapOptions = {
+                center: new google.maps.LatLng(lat, lng),
+                zoom: 18,
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+
+            map = new google.maps.Map(document.getElementById("map_canvas"),
+                mapOptions);
+            
+            google.maps.event.addListener(map, 'click', function (event) {
+                
+                lat =event.latLng.lat();
+                lng=event.latLng.lng();
+
+                document.getElementById('lat').value=lat;
+                document.getElementById('lng').value=lng;
+                
+                map.clearMarkers();
+                drawMarker();
+            });
+
+            google.maps.event.addDomListener(window, "resize", function() {
+                var center = map.getCenter();
+                google.maps.event.trigger(map, "resize");
+                map.setCenter(center);
+		    });
+
+            drawMarker();
+
+        }
+
+        
+        function drawMarker() 
+        {
+            
+            var infowindow = new google.maps.InfoWindow();
+            var marker, i; 
+            
+                var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld= " + sessionStorage.characterPin + "|" + sessionStorage.colorPin,
+                        new google.maps.Size(21, 34),
+                        new google.maps.Point(0, 0),
+                        new google.maps.Point(20, 60));
+
+                marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(lat, lng),
+                    icon: pinImage,
+                    title: '' + sessionStorage.messagePin,
+                    map: map
+                });
+
+               
+
+                google.maps.event.addListener(marker, 'click', (function (marker, i) {
+                    return function () {
+                        infowindow.setContent("HOLA");
+                        infowindow.open(map, marker);
+                    }
+                })(marker, i));
+           
+        }
+
+        
+    
+    function obtenerDireccion()
+    {
+        var geocoder = new google.maps.Geocoder;
+        
+        var mylat = 19.0190684;
+        var mylng = -98.2395929;
+
+        var latlng = {lat: parseFloat(mylat), lng: parseFloat(mylng)};
+ 
+    geocoder.geocode({'location': latlng}, function(results, status) {
+
+    if (status === 'OK') {
+
+      if (results[0]) {
+          var data = results[0].formatted_address.split(",");
+          $("#calle").text(data[0]);
+          $("#colonia").text(data[1]);
+          $("#municipio").text(data[2]);
+          $("#codigo_postal").text(data[3]);
+          $("#estado").text(data[4]);
+          $("#pais_address").text(data[5]);
+      } else {
+        window.alert('No results found');
+      }
+         } else {
+      window.alert('Geocoder failed due to: ' + status);
+        }
+    });
+    }
+
+
+    function obtenerClima()
+    {
+        var lat = 19.0433;
+        var lng = -98.2019;
+        var apiKey = "2af72ef62258728d72777bef612f2a3e";
+
+      $.getJSON("https://api.openweathermap.org/data/2.5/weather?lat=" + 
+        lat + "&lon=" + lng + "&appid=" + apiKey, function(data) 
+        {
+            $("#temp").text(convertKelvinToCelsius(data.main.temp) + " °C");
+            $("#press").text(data.main.pressure);
+            $("#humidity").text(data.main.humidity);
+            $("#temp_max").text(convertKelvinToCelsius(data.main.temp_max) + " °C");
+            $("#temp_min").text(convertKelvinToCelsius(data.main.temp_min) + " °C");
+        })
+    }
+
+    function convertKelvinToCelsius(kelvin){
+        return parseFloat(kelvin) - 273.15; 
+    }
+    </script>
+
+  </head>
+
+  <body onload="initMap()">
+
+    <nav class="navbar navbar-default" role="navigation">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-megadropdown-tabs">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">
+                    <img alt="Brand" src="images/ecommercecar.png" width="40px" height="40px">
+                    </a>
+            </div>
+        
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-megadropdown-tabs">
+                <ul class="nav navbar-nav">
+                    <li class="dropdown mega-dropdown active">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">Productos <span class="caret"></span></a>				
+                        <div class="dropdown-menu mega-dropdown-menu">
+                            <div class="container-fluid">
+                                <!-- Tab panes -->
+                                <div class="tab-content">
+                                <div class="tab-pane active" id="men">
+                                    <ul class="nav-list list-inline">
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_Running.png"><span>Running</span></a></li>
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_Basketball.png"><span>Basketball</span></a></li>
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_Football.png"><span>Football</span></a></li>
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_Soccer.png"><span>Soccer</span></a></li>
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_MensTraining.png"><span>Men's Training</span></a></li>
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_WomensTraining.png"><span>Women's Training</span></a></li>
+                                    </ul>
+                                </div>
+                                <div class="tab-pane" id="women">
+                                    <ul class="nav-list list-inline">
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_Running.png"><span>Running</span></a></li>
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_Basketball.png"><span>Basketball</span></a></li>
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_Football.png"><span>Football</span></a></li>
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_Soccer.png"><span>Soccer</span></a></li>                                
+                                    </ul>
+                                </div>
+                                <div class="tab-pane" id="kids">
+                                    <ul class="nav-list list-inline">
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_Running.png"><span>Running</span></a></li>
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_Basketball.png"><span>Basketball</span></a></li>
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_Football.png"><span>Football</span></a></li>
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_Soccer.png"><span>Soccer</span></a></li>
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_MensTraining.png"><span>Men's Training</span></a></li>
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_WomensTraining.png"><span>Women's Training</span></a></li>
+                                    </ul>
+                                </div>
+                                <div class="tab-pane" id="sports">
+                                    <ul class="nav-list list-inline">                                
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_Basketball.png"><span>Basketball</span></a></li>
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_Football.png"><span>Football</span></a></li>
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_Soccer.png"><span>Soccer</span></a></li>
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_MensTraining.png"><span>Men's Training</span></a></li>
+                                        <li><a href="#"><img src="http://content.nike.com/content/dam/one-nike/globalAssets/menu_header_images/OneNike_Global_Nav_Icons_WomensTraining.png"><span>Women's Training</span></a></li>
+                                    </ul>
+                                </div>
+                                </div>
+                            </div>
+                            <!-- Nav tabs -->
+                            <ul class="nav nav-tabs" role="tablist">
+                                <li class="active"><a href="#men" role="tab" data-toggle="tab">Men</a></li>
+                                <li><a href="#women" role="tab" data-toggle="tab">Women</a></li>
+                                <li><a href="#kids" role="tab" data-toggle="tab">Kids</a></li>
+                                <li><a href="#sports" role="tab" data-toggle="tab">Sports</a></li>
+                            </ul>                    
+                        </div>				
+                    </li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="/shoppingcar">Tienda virtual</a></li>
+                    <li><a href="/youtube_channel">Canal de YouTube</a></li>
+                    <li><a href="/maps">Contacto</a></li>
+                </ul>
+            </div><!-- /.navbar-collapse -->
+        </div><!-- /.container-fluid -->
+    </nav>
+   
+    <div class="container">
+        <div class="row">
+            
+        </div>
+        <div class="row">
+            <table>
+                <tr>
+                    <td>
+                        <input type="button" value="Obtener Direccion" onclick="obtenerDireccion()" data-toggle="modal" data-target="#addressDataModal"/>
+                        <input type="button" value="Obtener Clima" onclick="obtenerClima()" data-toggle="modal" data-target="#weatherDataModal"/>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="row">
+            <div class="col-md-12" id="map_canvas"  style="width: 100%; height: 90%; float: left; border: 1px solid black; padding-bottom: 0; padding-top: 90%;"></div>    
+        </div>
+    </div>
+       
+    <!-- Modal -->
+    <div class="modal fade" id="modalSig" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Personalizar Marcador</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <div class="modal-body">
+                <fieldset>
+                    <label>Seleccione un color:</label>
+                    <div class="bs-docs-example">
+                        <select id="colorselector_2">
+                            <option value="106" data-color="#A0522D">sienna</option>
+                            <option value="47" data-color="#CD5C5C" selected="selected">indianred</option>
+                            <option value="87" data-color="#FF4500">orangered</option>
+                            <option value="17" data-color="#008B8B">darkcyan</option>
+                            <option value="18" data-color="#B8860B">darkgoldenrod</option>
+                            <option value="68" data-color="#32CD32">limegreen</option>
+                            <option value="42" data-color="#FFD700">gold</option>
+                            <option value="77" data-color="#48D1CC">mediumturquoise</option>
+                            <option value="107" data-color="#87CEEB">skyblue</option>
+                            <option value="46" data-color="#FF69B4">hotpink</option>
+                            <option value="47" data-color="#CD5C5C">indianred</option>
+                            <option value="64" data-color="#87CEFA">lightskyblue</option>
+                            <option value="13" data-color="#6495ED">cornflowerblue</option>
+                            <option value="15" data-color="#DC143C">crimson</option>
+                            <option value="24" data-color="#FF8C00">darkorange</option>
+                            <option value="78" data-color="#C71585">mediumvioletred</option>
+                            <option value="123" data-color="#000000">black</option>
+                        </select> <br />
+                        <input type="text" id="colorValue" /> <input type="text" id="colorColor" /> <input type="text" id="colorTitle" />
+                    </div>
+                    <div class="control-group">
+                        <!-- Character -->
+                        <label class="control-label"  for="character">Caracter del marcador</label>
+                        <div class="controls">
+                            <input type="text" id="character" name="character" placeholder="" class="input-xlarge">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <!-- Message -->
+                        <label class="control-label"  for="message">Mensaje del marcador</label>
+                        <div class="controls">
+                            <input type="text" id="message" name="message" placeholder="" class="input-xlarge">
+                        </div>
+                        </div>
+                </fieldset>
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            <button type="button" class="btn btn-primary" onclick="changePin()" data-dismiss="modal">Guardar cambios</button>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <!--Address Data Show-->
+    <div class="modal fade" id="addressDataModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="exampleModalLabel">Información del clima</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+                <label>Calle:</label> <label id="calle"></label><br/>
+                <label>Colonia:</label> <label id="colonia"></label><br/>
+                <label>Municipio:</label> <label id="municipio"></label><br/>
+                <label>Código postal:</label> <label id="codigo_postal"></label><br/>
+                <label>Estado:</label> <label id="estado"></label><br/>
+                <label>País:</label> <label id="pais_address"></label><br/>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!--Weather Data Show-->
+    <div class="modal fade" id="weatherDataModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="exampleModalLabel">Información del clima</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+                <label>Temperatura:</label> <label id="temp"></label><br/>
+                <label>Presión:</label> <label id="press"></label><br/>
+                <label>Humedad:</label> <label id="humidity"></label><br/>
+                <label>Temperatura Max:</label> <label id="temp_max"></label><br/>
+                <label>Temperatura Min:</label> <label id="temp_min"></label><br/>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+  </body>
+</html>
